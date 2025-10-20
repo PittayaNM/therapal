@@ -1,19 +1,37 @@
 name: therapal
 description: "A new Flutter project."
+# Prevents accidental publishing to pub.dev
 publish_to: 'none'
-version: 0.1.0
+
+# Version and build number
+version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.5 <4.0.0'
+  sdk: ^3.9.2
 
+# Dependencies specify other packages that your app needs
 dependencies:
   flutter:
     sdk: flutter
 
+  # iOS-style icons
+  # cupertino_icons: ^1.0.8
+
+  # Video call plugin (Jitsi)
+  # jitsi_meet_flutter_sdk: ^0.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+
+  # Recommended lint rules for good coding practices
+  flutter_lints: ^6.0.0
 
 flutter:
+  # Use Material icons in your app
   uses-material-design: true
+
+  # Assets
+  assets:
+    - assets/therapal.png
+    - assets/Pin.png
