@@ -1,4 +1,4 @@
-import 'payment_screen.dart';
+import '../../Payments/payment_screen.dart';
 import 'package:flutter/material.dart';
 
 class SubscriptionScreen extends StatefulWidget {
