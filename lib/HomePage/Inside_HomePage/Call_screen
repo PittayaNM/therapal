@@ -1,0 +1,52 @@
+class CallScreen extends StatelessWidget {
+  const CallScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF101820),
+      body: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircleAvatar(
+              radius: 70,
+              backgroundImage: AssetImage('assets/doctor.jpg'),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Dr. Ugo David',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Calling…',
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 60),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.mic_none_rounded, color: Colors.white, size: 36),
+                  onPressed: () {},
+                ),
+                const SizedBox(width: 40),
+                FloatingActionButton(
+                  backgroundColor: Colors.redAccent,
+                  onPressed: () => Navigator.pop(context),
+                  child: const Icon(Icons.call_end_rounded, color: Colors.white),
+                ),
+                const SizedBox(width: 40),
+                IconButton(
+                  icon: const Icon(Icons.videocam_rounded, color: Colors.white, size: 36),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

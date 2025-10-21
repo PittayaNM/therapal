@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "179185193081",
+    "project_id": "therapal-e5287",
+    "storage_bucket": "therapal-e5287.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:179185193081:android:f40a1afe4fabc8442704a8",
+        "android_client_info": {
+          "package_name": "com.example.therapal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJ1OPnijQnFeVdWpglOJLIAFL3yiFQYA4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
