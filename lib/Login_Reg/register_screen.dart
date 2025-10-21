@@ -41,7 +41,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Header gradient โค้งมน (เหมือน Login)
             ClipPath(
               clipper: _BottomArcClipper(),
               child: Container(
@@ -61,7 +60,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // โลโก้ + ชื่อ
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
@@ -97,7 +95,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // ฟอร์ม
                   Form(
                     key: _formKey,
                     child: Column(
@@ -208,7 +205,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 28),
 
-                        // ปุ่ม Sign Up
                         SizedBox(
                           width: double.infinity,
                           height: 56,
@@ -242,7 +238,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // ลิงก์ กลับไป Sign In
                         SizedBox(
                           width: double.infinity,
                           child: Text.rich(
@@ -288,7 +283,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
 
-            // เส้น home indicator
             Positioned(
               bottom: 10,
               left: (width - 120) / 2,
@@ -307,7 +301,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // --- Actions ---
   Future<void> _pickDob() async {
     final now = DateTime.now();
     final first = DateTime(now.year - 120, 1, 1);
@@ -330,14 +323,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _onSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: call backend / Firebase register
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Creating account...')));
     }
   }
 
-  // --- UI helpers (เหมือนหน้า Login) ---
   Widget _label(String text) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Text(
@@ -387,7 +378,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// ใช้คลิปเปอร์เดียวกับหน้า Login เพื่อโค้งล่าง
 class _BottomArcClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

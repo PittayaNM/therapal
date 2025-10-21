@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'Login_Reg/login_screen.dart';
+import 'package:therapal/Login_Reg/login_screen.dart';
+import 'package:therapal/Login_Reg/Forgot_Password/forgot_password_screen.dart';
+import 'package:therapal/Login_Reg/Forgot_Password/OTP_screen.dart';
+import 'package:therapal/Login_Reg/Forgot_Password/reset_password_screen.dart';
 
 void main() {
   runApp(const TheraPalApp());
@@ -21,7 +24,15 @@ class TheraPalApp extends StatelessWidget {
           bodyMedium: TextStyle(fontSize: 14),
         ),
       ),
-      home: const LoginScreen(),
+
+      // ✅ ใช้ routes สำหรับการนำทางทั้งหมด
+      initialRoute: '/',
+      routes: {
+        '/': (_) => const LoginScreen(),
+        '/forgot-password': (_) => const ForgotPasswordScreen(),
+        '/otp': (_) => const OtpVerifyScreen(),
+        '/reset-password': (_) => const ResetPasswordScreen(),
+      },
     );
   }
 }

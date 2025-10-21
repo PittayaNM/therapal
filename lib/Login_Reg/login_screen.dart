@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import '../HomePage/home_screen.dart';
+import 'package:therapal/Login_Reg/Forgot_Password/forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // ✅ Gradient พื้นหลังแบบโค้ง Fade ลง
             ClipPath(
               clipper: _BottomArcClipper(),
               child: Container(
@@ -41,8 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0xFFBDEBFF), // ฟ้าเข้มด้านบน
-                      Color(0xFFE7FAFF), // ฟ้าจางล่าง
+                      Color(0xFFBDEBFF),
+                      Color(0xFFE7FAFF),
                     ],
                     stops: [0.0, 1.0],
                   ),
@@ -50,13 +50,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // ✅ เนื้อหาทั้งหมด
             SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 50, 24, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // โลโก้ + ชื่อแอป
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
@@ -82,7 +80,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // หัวข้อกลาง
                   Text(
                     'Sign In',
                     style: theme.textTheme.headlineMedium?.copyWith(
@@ -98,7 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // ฟอร์ม
                   Form(
                     key: _formKey,
                     child: Column(
@@ -160,7 +156,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 28),
 
-                        // ปุ่ม Sign In
                         SizedBox(
                           width: double.infinity,
                           height: 56,
@@ -203,7 +198,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // ไอคอนโซเชียล
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -216,7 +210,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // ลิงก์ Sign Up / Forgot password
                         Column(
                           children: [
                             SizedBox(
@@ -255,17 +248,29 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
-                              'Forgot Password',
-                              style: TextStyle(
-                                color: Color(0xFFD27A2B),
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ForgotPasswordScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Forgot Password',
+                                style: TextStyle(
+                                  color: Color(0xFFD27A2B),
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
+
                         const SizedBox(height: 48),
                       ],
                     ),
@@ -274,7 +279,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // เส้นด้านล่าง
             Positioned(
               bottom: 10,
               left: (width - 120) / 2,
@@ -293,7 +297,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ---------- helper methods ----------
   Widget _roundedField({
     required TextEditingController controller,
     required String hint,

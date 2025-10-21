@@ -94,7 +94,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     Expanded(
                       child: _PlanCard(
                         titleTop: '3-Day Free Trial',
-                        price: '\$49.99',
+                        price: '\$29.99',
                         subtitle: 'Month',
                         badgeText: null,
                         selected: _selectedPlan == 0,
@@ -107,7 +107,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         titleTop: 'Yearly Access',
                         price: '\$129.99',
                         subtitle: 'Year',
-                        badgeText: 'Save Rs:-2589/-',
+                        badgeText: 'Save \$230',
                         selected: _selectedPlan == 1,
                         onTap: () => setState(() => _selectedPlan = 1),
                       ),
