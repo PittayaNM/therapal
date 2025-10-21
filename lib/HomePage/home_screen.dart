@@ -195,17 +195,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 28),
 
-                  TextButton(
-                    onPressed: () => _tap('Settings & Privacy'),
-                    child: const Text(
-                      'Settings & Privacy',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF454545),
-                      ),
-                    ),
-                  ),
+                  // TextButton(
+                  //   onPressed: () => _tap('Settings & Privacy'),
+                  //   child: const Text(
+                  //     'Settings & Privacy',
+                  //     style: TextStyle(
+                  //       fontSize: 18,
+                  //       fontWeight: FontWeight.w700,
+                  //       color: Color(0xFF454545),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
