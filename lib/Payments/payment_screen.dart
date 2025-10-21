@@ -1,5 +1,6 @@
 import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // สำหรับ TextInputFormatter
 
 class PaymentScreen extends StatefulWidget {
   final String planName; // เช่น 'Monthly ($49.99)' หรือ 'Yearly ($129.99)'
@@ -16,7 +17,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  // วิธีจ่าย: 0 = Mastercard, 1 = PayPal, 2 = ApplePay
+  // วิธีจ่าย: 0 = Mastercard, 1 = Visa, 2 = PayPal
   int _payMethod = 0;
 
   // ทำเป็น List ปกติเพื่อให้เพิ่มบัตรใหม่ได้
@@ -85,24 +86,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 16),
 
-            // วิธีจ่าย
+            // วิธีจ่าย (โลโก้รูปภาพ) — 0: Mastercard, 1: Visa, 2: PayPal
             Row(
               children: [
                 _payChip(
                   selected: _payMethod == 0,
-                  child: _brandIcon('MC'),
+                  child: _brandLogo('MC'),
                   onTap: () => setState(() => _payMethod = 0),
                 ),
                 const SizedBox(width: 12),
                 _payChip(
                   selected: _payMethod == 1,
-                  child: _brandIcon('PP'),
+                  child: _brandLogo('VI'),
                   onTap: () => setState(() => _payMethod = 1),
                 ),
                 const SizedBox(width: 12),
                 _payChip(
                   selected: _payMethod == 2,
-                  child: _brandIcon('AP'),
+                  child: _brandLogo('PP'),
                   onTap: () => setState(() => _payMethod = 2),
                 ),
               ],
@@ -179,13 +180,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   elevation: 0,
                 ),
                 onPressed: () {
-                  final method = ['Mastercard', 'PayPal', 'Apple Pay'][_payMethod];
+                  final method = ['Mastercard', 'Visa', 'PayPal'][_payMethod];
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Pay with $method • Total \$${total.toStringAsFixed(2)}'),
                     ),
                   );
-                  // TODO: เรียก payment flow ของจริง
+                  // TODO: payment flow จริง
                 },
                 child: const Text(
                   'Continue',
@@ -278,7 +279,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           label: 'Expiry date',
                           hint: 'MM/YY',
                           controller: expiryCtrl,
-                          keyboardType: TextInputType.datetime,
+                          keyboardType: TextInputType.number, // ให้พิมพ์ตัวเลข
+                          inputFormatters: [
+                            _ExpiryDateFormatter(), // ใส่ "/" อัตโนมัติ
+                          ],
                           validator: (v) => (v == null || !RegExp(r'^\d{1,2}/\d{2}$').hasMatch(v))
                               ? 'Invalid date'
                               : null,
@@ -312,8 +316,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 'Terms and Conditions',
                                 style: TextStyle(
                                   color: Color(0xFF00A3D4),
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                  fontWeight: FontWeight.w700),
                               ),
                             ],
                           ),
@@ -407,6 +410,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
     bool obscure = false,
+    List<TextInputFormatter>? inputFormatters, // รองรับใส่ formatter
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,6 +423,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           validator: validator,
           keyboardType: keyboardType,
           obscureText: obscure,
+          inputFormatters: inputFormatters, // ใช้ formatter ถ้ามี
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
@@ -474,17 +479,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
       );
 
-  static Widget _brandIcon(String tag) {
-    switch (tag) {
-      case 'MC':
-        return const Icon(Icons.account_balance_wallet_rounded, color: Colors.red, size: 28);
-      case 'PP':
-        return const Icon(Icons.payments_rounded, color: Color(0xFF0A66C2), size: 28);
-      case 'AP':
-        return const Icon(Icons.phone_iphone_rounded, color: Colors.black87, size: 28);
-      default:
-        return const Icon(Icons.credit_card, size: 28);
+  // โลโก้แบรนด์แบบรูปภาพ (ใช้ไฟล์: mastercard.png, Visa.png, Paypal.png)
+  static Widget _brandLogo(String tag) {
+    // ปรับ path ตามโครงโปรเจคของคุณ (ตัวอย่างใช้ assets/brands/)
+    const paths = {
+      'MC': 'assets/mastercard.png', // Mastercard
+      'VI': 'assets/Visa.png',       // Visa
+      'PP': 'assets/Paypal.png',     // PayPal
+    };
+
+    final path = paths[tag];
+    if (path == null) {
+      return const Icon(Icons.credit_card, size: 28); // fallback
     }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Image.asset(
+        path,
+        height: 24,
+        fit: BoxFit.contain,
+      ),
+    );
   }
 
   static Widget _payChip({
@@ -701,6 +717,37 @@ class _CreditCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Formatter: แปลงตัวเลขเป็นรูปแบบ MM/YY และใส่ "/" อัตโนมัติหลัง 2 หลัก
+class _ExpiryDateFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // เอาเฉพาะตัวเลข
+    var digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+
+    // จำกัดความยาวไม่เกิน 4 ตัว (MMYY)
+    if (digits.length > 4) digits = digits.substring(0, 4);
+
+    String text;
+    if (digits.isEmpty) {
+      text = '';
+    } else if (digits.length <= 2) {
+      // พิมพ์เดือน -> ใส่ "/" ต่อท้ายทันทีเมื่อครบ 2 หลัก
+      text = digits.length == 2 ? '${digits}/' : digits;
+    } else {
+      // 3-4 หลัก -> MM/YY(บางส่วน)
+      text = '${digits.substring(0, 2)}/${digits.substring(2)}';
+    }
+
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }

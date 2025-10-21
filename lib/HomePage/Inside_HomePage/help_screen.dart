@@ -43,8 +43,6 @@ class HelpScreen extends StatelessWidget {
                         color: Color(0xFF1B1B1B),
                       ),
                     ),
-                    const Spacer(),
-                    _roundIcon(Icons.notifications_none_rounded),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -103,8 +101,7 @@ class HelpScreen extends StatelessWidget {
                         iconBg: Color(0xFFEAFBF1),
                         title: 'Live Chat',
                         primary: 'Available in the app',
-                        secondary:
-                            'Chat with our support team in real-time',
+                        secondary: 'Chat with our support team in real-time',
                       ),
                       SizedBox(height: 8),
                     ],
@@ -175,11 +172,7 @@ class _TabHeader extends StatelessWidget {
               ),
             ),
             const Expanded(
-              child: Divider(
-                height: 3,
-                thickness: 1,
-                color: Color(0xFFE6E8ED),
-              ),
+              child: Divider(height: 3, thickness: 1, color: Color(0xFFE6E8ED)),
             ),
           ],
         ),
@@ -212,10 +205,7 @@ class _InfoTile extends StatelessWidget {
         Container(
           width: 56,
           height: 56,
-          decoration: BoxDecoration(
-            color: iconBg,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
           child: Icon(icon, size: 26, color: const Color(0xFF3A78D0)),
         ),
         const SizedBox(width: 14),
@@ -262,7 +252,12 @@ class _HeaderArcClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final p = Path();
     p.lineTo(0, size.height - 100);
-    p.quadraticBezierTo(size.width / 2, size.height + 40, size.width, size.height - 100);
+    p.quadraticBezierTo(
+      size.width / 2,
+      size.height + 40,
+      size.width,
+      size.height - 100,
+    );
     p.lineTo(size.width, 0);
     p.close();
     return p;

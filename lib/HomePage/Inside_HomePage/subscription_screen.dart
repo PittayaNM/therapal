@@ -65,20 +65,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // ภาพประกอบ (ใส่รูปเองได้; ถ้าไม่มีจะแสดง icon)
-                Container(
-                  height: 180,
-                  alignment: Alignment.center,
-                  child: Image.asset(
-                    'assets/therapy_illustration.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.groups_2_rounded,
-                      size: 120,
-                      color: Color(0xFF8FA9C8),
-                    ),
-                  ),
-                ),
+                const Icon(Icons.groups_2_rounded,
+    size: 120, color: Color(0xFF8FA9C8)),
 
                 const SizedBox(height: 16),
                 const _FeatureRow(text: 'Ads Free!'),

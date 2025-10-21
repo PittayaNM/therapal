@@ -35,3 +35,8 @@ flutter:
   assets:
     - assets/therapal.png
     - assets/Pin.png
+    - assets/doctor.jpg
+    - assets/indian.jpg
+    - assets/mastercard.png
+    - assets/Visa.png
+    - assets/Paypal.png

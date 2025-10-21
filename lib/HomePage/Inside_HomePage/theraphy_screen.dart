@@ -98,10 +98,6 @@ class TherapyScreen extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.notifications_none_rounded),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
