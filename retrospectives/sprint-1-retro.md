@@ -23,15 +23,15 @@
 
 ## 🎯 What Could We Improve?
 
-- be more proactive to work.
+- Be more proactive to work.
 
-- improve communication between team members.
+- Improve communication between team members.
 
-- allocate buffer time for unexpected delays.
+- Allocate buffer time for unexpected delays.
 
-- conduct mid-sprint check-ins to adjust plans as needed.
+- Conduct mid-sprint check-ins to adjust plans as needed.
 
-- refine task estimation process based on past experiences.
+- Refine task estimation process based on past experiences.
 
 ## Action Items (Sprint 1)
 | Action Item | Owner |
