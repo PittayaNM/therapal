@@ -6,6 +6,7 @@ import 'Inside_HomePage/profile_screen.dart';
 import 'Inside_HomePage/theraphy_screen.dart';
 import 'Inside_HomePage/appointment_screen.dart';
 import 'Inside_HomePage/help_screen.dart';
+import 'Inside_HomePage/therapist_edit_screen.dart';
 import 'Inside_HomePage/subscription_screen.dart';
 import 'package:therapal/HomePage/Inside_HomePage/Lives_screens.dart';
 
@@ -209,12 +210,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.volunteer_activism_rounded,
                         title: 'Therapy',
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const TherapyScreen(),
-                            ),
-                          );
+                          // If the logged-in user is a therapist, open the edit screen.
+                          if (widget.userRole == 'therapist') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const TherapistEditScreen(),
+                              ),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const TherapyScreen(),
+                              ),
+                            );
+                          }
                         },
                       ),
                       _MenuCard(

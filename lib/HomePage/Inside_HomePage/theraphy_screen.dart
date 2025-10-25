@@ -1,69 +1,89 @@
 import 'package:flutter/material.dart';
 import 'doctor_detail_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TherapyScreen extends StatelessWidget {
   const TherapyScreen({super.key});
 
+  Stream<List<_Therapist>> _getAvailableTherapists() {
+    return FirebaseFirestore.instance
+        .collection('therapists')
+        .where('availability', isNull: false) // Only get therapists with availability
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final therapistsList = <_Therapist>[];
+      
+      for (var doc in snapshot.docs) {
+        final therapistData = doc.data();
+        final uid = doc.id; // This is the user's UID
+        
+        // Get user data from users collection
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+        
+        if (!userDoc.exists) continue; // Skip if user data not found
+        
+        final userData = userDoc.data()!;
+        
+    // Get specialties list and display string (use first with emoji)
+    final specialtiesList = (therapistData['specialties'] as List<dynamic>?)
+        ?.map((e) => e.toString())
+        .toList() ?? [];
+    String specialty = specialtiesList.isNotEmpty
+      ? '${_getSpecialtyEmoji(specialtiesList[0])}  ${specialtiesList[0]}'
+      : '🧠  General Therapy';
+
+        // Default rating if not set (we can add these fields to therapists collection later)
+        final rating = (therapistData['rating'] as num?)?.toDouble() ?? 4.5;
+        final reviews = (therapistData['reviews'] as int?) ?? 0;
+            
+        therapistsList.add(_Therapist(
+          name: userData['name'] ?? 'Unknown',
+          title: 'Therapist', // We can add title to users or therapists collection later
+          specialty: specialty,
+          rating: rating,
+          reviews: reviews,
+          uid: uid,
+          about: therapistData['about'] as String?,
+          availability: therapistData['availability'] as List<dynamic>?,
+          specialties: specialtiesList,
+        ));
+      }
+      
+      return therapistsList;
+    });
+  }
+
+  String _getSpecialtyEmoji(String specialty) {
+    // Map specialties to emojis
+    final emojiMap = {
+      'Anxiety & Stress': '🧠',
+      'Depression': '💬',
+      'Mindfulness': '🌿',
+      'Couple Therapy': '❤️',
+      'Anxiety': '🍀',
+      'Grief & Loss': '🌸',
+      'Trauma Recovery': '💭',
+    };
+
+    // Find the first matching key or return default
+    return emojiMap.entries
+        .firstWhere(
+          (entry) => specialty.toLowerCase().contains(entry.key.toLowerCase()),
+          orElse: () => MapEntry('default', '🧠'),
+        )
+        .value;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final therapists = <_Therapist>[
-      _Therapist(
-        name: 'Dr. Ugo David',
-        title: 'Sr.Psychologist',
-        specialty: '🧠  Anxiety & Stress Management',
-        rating: 4.9,
-        reviews: 280,
-        photoAsset: 'assets/Pin.png',
-      ),
-      _Therapist(
-        name: 'Dr. Maya Chan',
-        title: 'Psychologist',
-        specialty: '💬  Depression & Emotional Regulation',
-        rating: 4.8,
-        reviews: 180,
-      ),
-      _Therapist(
-        name: 'Dr. Elena Park',
-        title: 'Psychotherapist',
-        specialty: '🌿  Mindfulness & Work Burnout',
-        rating: 4.5,
-        reviews: 190,
-      ),
-      _Therapist(
-        name: 'Dr. Kevin Lee',
-        title: 'Couple Therapist',
-        specialty: '❤️  Couple Therapy & Communication',
-        rating: 4.7,
-        reviews: 150,
-      ),
-      _Therapist(
-        name: 'Dr. jame Berg',
-        title: 'Clinical Psychologist',
-        specialty: '🍀  Anxiety, OCD, and Self-Esteem',
-        rating: 4.8,
-        reviews: 320,
-      ),
-      _Therapist(
-        name: 'Dr. Napat S.',
-        title: 'Psychologist',
-        specialty: '🌸  Grief & Emotional Healing',
-        rating: 4.9,
-        reviews: 100,
-      ),
-      _Therapist(
-        name: 'Dr. Jessy Wong',
-        title: 'Psychotherapist',
-        specialty: '💭  Trauma Recovery & Self-Growth',
-        rating: 4.8,
-        reviews: 147,
-      ),
-    ];
-
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            // header gradient โค้ง
+            // Header gradient curve
             ClipPath(
               clipper: _HeaderArcClipper(),
               child: Container(
@@ -78,57 +98,90 @@ class TherapyScreen extends StatelessWidget {
               ),
             ),
 
-            ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              children: [
-                // AppBar
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                      onPressed: () => Navigator.pop(context),
+            StreamBuilder<List<_Therapist>>(
+              stream: _getAvailableTherapists(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Error loading therapists',
+                      style: TextStyle(color: Colors.red[700]),
                     ),
-                    const SizedBox(width: 6),
+                  );
+                }
+
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final therapists = snapshot.data!;
+
+                if (therapists.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No therapists available at the moment',
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
+                    ),
+                  );
+                }
+
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  children: [
+                    // AppBar
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Therapy',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF222222),
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     const Text(
-                      'Therapy',
+                      'Find Your Therapist',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF222222),
+                        color: Color(0xFF1D1D1D),
                       ),
                     ),
-                    const Spacer(),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Find Your Therapist',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1D1D1D),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                // รายการนักบำบัด
-                for (final t in therapists) _TherapistCard(t: t),
-              ],
+                    // Therapist list
+                    for (final t in therapists) _TherapistCard(t: t),
+                  ],
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
-}
+  }
+
 
 class _Therapist {
   final String name;
-  final String title;        // เพิ่มตำแหน่งใต้ชื่อ
-  final String specialty;    // รวมอีโมจิไว้หน้า text เพื่อให้เหมือนแบบ
+  final String title;
+  final String specialty;
   final double rating;
   final int reviews;
-  final String? photoAsset;  // path รูปจาก assets (ถ้ามี)
+  final String uid;
+  final List<String>? specialties;
+  final String? about;
+  final List<dynamic>? availability;
 
   const _Therapist({
     required this.name,
@@ -136,7 +189,10 @@ class _Therapist {
     required this.specialty,
     required this.rating,
     required this.reviews,
-    this.photoAsset,
+    required this.uid,
+    this.specialties,
+    this.about,
+    this.availability,
   });
 }
 
@@ -149,7 +205,6 @@ class _TherapistCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(22),
       onTap: () {
-        // ส่ง args ไปหน้า DoctorDetail
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -158,14 +213,15 @@ class _TherapistCard extends StatelessWidget {
                 name: t.name,
                 title: t.title,
                 specialty: t.specialty,
+                    specialties: t.specialties,
                 rating: t.rating,
                 reviews: t.reviews,
-                about:
-                    'A doctor is someone who is experienced and certified to practice medicine to help maintain or restore physical and mental health.',
+                about: t.about ?? 'A dedicated therapist here to help you on your journey to better mental health.',
+                availability: t.availability,
                 licenseName: t.name,
-                licenseNo: 'XX-00000-XX',
+                licenseNo: 'XX-00000-XX', // These could be added to Firestore later
                 licenseExpire: '00/00/0000',
-                photoAsset: t.photoAsset,
+                    therapistUid: t.uid,
               ),
             ),
           ),
@@ -187,7 +243,7 @@ class _TherapistCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // avatar วงกลม (ใช้รูปถ้ามี ไม่งั้นใช้ไอคอน)
+            // Profile picture (use default icon if no photo)
             Container(
               width: 54,
               height: 54,
@@ -197,14 +253,12 @@ class _TherapistCard extends StatelessWidget {
                 border: Border.all(color: Colors.white, width: 3),
               ),
               child: ClipOval(
-                child: t.photoAsset != null
-                    ? Image.asset(t.photoAsset!, fit: BoxFit.cover)
-                    : const Icon(Icons.person, size: 28, color: Color(0xFF6B7AFF)),
+                child: const Icon(Icons.person, size: 28, color: Color(0xFF6B7AFF)),
               ),
             ),
             const SizedBox(width: 12),
 
-            // ชื่อและสเปเชียลตี้
+            // Name, title and specialty
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,7 +301,7 @@ class _TherapistCard extends StatelessWidget {
 
             const SizedBox(width: 10),
 
-            // เรตติ้ง + รีวิว
+            // Rating and reviews
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
