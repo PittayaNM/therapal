@@ -19,6 +19,8 @@ class DoctorDetailArgs {
   final String licenseExpire;
   final String? photoAsset;
   final String therapistUid;
+  final String? email;
+  final String? phone;
 
   const DoctorDetailArgs({
     required this.name,
@@ -34,6 +36,8 @@ class DoctorDetailArgs {
     required this.licenseExpire,
     this.photoAsset,
     required this.therapistUid,
+    this.email,
+    this.phone,
   });
 }
 
@@ -356,6 +360,41 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
                     style: const TextStyle(fontSize: 14, color: Colors.black87),
                   ),
                 ),
+
+                // Contact Information
+                if (args.email != null || args.phone != null)
+                  _sectionCard(
+                    title: 'Contact Information',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (args.email != null)
+                          Row(
+                            children: [
+                              const Icon(Icons.email, size: 18, color: Colors.black54),
+                              const SizedBox(width: 8),
+                              Text(
+                                args.email!,
+                                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                              ),
+                            ],
+                          ),
+                        if (args.email != null && args.phone != null)
+                          const SizedBox(height: 8),
+                        if (args.phone != null)
+                          Row(
+                            children: [
+                              const Icon(Icons.phone, size: 18, color: Colors.black54),
+                              const SizedBox(width: 8),
+                              Text(
+                                args.phone!,
+                                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
 
                 _sectionCard(
                   title: 'license verification',
@@ -1112,6 +1151,8 @@ class ConfirmAppointmentScreen extends StatelessWidget {
                     'patientUid': uid,
                     'createdAt': FieldValue.serverTimestamp(),
                     'status': 'confirmed',
+                    'calling': 'awaiting for therapist',
+                    'day': dayName, // Day of week from the matched availability slot
                   });
                 });
 

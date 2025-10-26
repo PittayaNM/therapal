@@ -49,6 +49,8 @@ class TherapyScreen extends StatelessWidget {
           about: therapistData['about'] as String?,
           availability: therapistData['availability'] as List<dynamic>?,
           specialties: specialtiesList,
+          email: userData['email'] as String?,
+          phone: userData['phone'] as String?,
         ));
       }
       
@@ -182,6 +184,8 @@ class _Therapist {
   final List<String>? specialties;
   final String? about;
   final List<dynamic>? availability;
+  final String? email;
+  final String? phone;
 
   const _Therapist({
     required this.name,
@@ -193,6 +197,8 @@ class _Therapist {
     this.specialties,
     this.about,
     this.availability,
+    this.email,
+    this.phone,
   });
 }
 
@@ -222,6 +228,8 @@ class _TherapistCard extends StatelessWidget {
                 licenseNo: 'XX-00000-XX', // These could be added to Firestore later
                 licenseExpire: '00/00/0000',
                     therapistUid: t.uid,
+                email: t.email,
+                phone: t.phone,
               ),
             ),
           ),
