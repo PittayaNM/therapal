@@ -89,14 +89,6 @@ class ProfileScreen extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Edit tapped')),
-                          );
-                        },
-                        child: const Text('Edit'),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

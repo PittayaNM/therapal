@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_screen.dart';
@@ -22,8 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _password = TextEditingController();
   final _confirm = TextEditingController();
   
-  String _selectedRole = 'patient'; // Default role
-
+  String _selectedRole = 'patient';
   bool _obscure1 = true;
   bool _obscure2 = true;
   DateTime? _dobValue;
@@ -66,17 +66,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // โลโก้
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
                       CircleAvatar(
                         radius: 16,
                         backgroundColor: Color(0xFF7C4DFF),
-                        child: Icon(
-                          Icons.psychology_alt_rounded,
-                          size: 18,
-                          color: Colors.white,
-                        ),
+                        child: Icon(Icons.psychology_alt_rounded,
+                            size: 18, color: Colors.white),
                       ),
                       SizedBox(width: 8),
                       Text(
@@ -90,7 +88,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ],
                   ),
                   const SizedBox(height: 28),
-
                   const Text(
                     'Register',
                     style: TextStyle(
@@ -110,24 +107,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         _roundedField(
                           controller: _name,
                           hint: 'Enter your name...',
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Please enter your name'
-                              : null,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Please enter your name';
+                            }
+                            if (!RegExp(r"^[A-Za-z\s]+$").hasMatch(v.trim())) {
+                              return 'Name can contain only letters';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
 
                         _label('Date of birth'),
                         _roundedField(
                           controller: _dob,
-                          hint: 'Enter your date of birth...',
+                          hint: 'Select your date of birth...',
                           readOnly: true,
                           suffix: IconButton(
                             icon: const Icon(Icons.calendar_today_outlined),
                             onPressed: _pickDob,
                           ),
-                          validator: (v) => _dobValue == null
-                              ? 'Please select your birth date'
-                              : null,
+                          validator: (_) {
+                            if (_dobValue == null) {
+                              return 'Please select your birth date';
+                            }
+                            final now = DateTime.now();
+                            final age = now.year - _dobValue!.year;
+                            if (_dobValue!.isAfter(now)) {
+                              return 'Birth date cannot be in the future';
+                            }
+                            if (age < 10 ||
+                                (_dobValue!.month == now.month &&
+                                    _dobValue!.day > now.day)) {
+                              return 'You must be at least 10 years old';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
 
@@ -143,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             final ok = RegExp(
                               r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,}$',
                             ).hasMatch(v.trim());
-                            return ok ? null : 'Invalid email';
+                            return ok ? null : 'Invalid email format';
                           },
                         ),
                         const SizedBox(height: 16),
@@ -153,9 +169,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _phone,
                           hint: 'Enter your phone number...',
                           keyboardType: TextInputType.phone,
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Please enter your phone number'
-                              : null,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Please enter your phone number';
+                            }
+                            final phone = v.trim();
+                            if (!RegExp(r'^\d{9,10}$').hasMatch(phone)) {
+                              return 'Phone number must have 9–10 digits';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
 
@@ -179,6 +203,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             }
                             if (v.length < 6) {
                               return 'At least 6 characters';
+                            }
+                            if (!RegExp(r'^(?=.*[A-Z])(?=.*[0-9]).+$').hasMatch(v)) {
+                              return 'Must contain 1 uppercase letter and 1 number';
                             }
                             return null;
                           },
@@ -220,18 +247,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           child: DropdownButtonFormField<String>(
                             value: _selectedRole,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                            ),
+                            decoration:
+                                const InputDecoration(border: InputBorder.none),
                             items: const [
                               DropdownMenuItem(
-                                value: 'patient',
-                                child: Text('Patient'),
-                              ),
+                                  value: 'patient', child: Text('Patient')),
                               DropdownMenuItem(
-                                value: 'therapist',
-                                child: Text('Therapist'),
-                              ),
+                                  value: 'therapist', child: Text('Therapist')),
                             ],
                             onChanged: (value) {
                               if (value != null) {
@@ -264,54 +286,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                                 SizedBox(width: 8),
-                                Icon(
-                                  Icons.arrow_right_alt_rounded,
-                                  color: Colors.white,
-                                  size: 26,
-                                ),
+                                Icon(Icons.arrow_right_alt_rounded,
+                                    color: Colors.white, size: 26),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(height: 20),
 
-                        SizedBox(
-                          width: double.infinity,
-                          child: Text.rich(
-                            TextSpan(
-                              text: 'Already have an account? ',
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 14,
-                              ),
-                              children: [
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.middle,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const LoginScreen(),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text(
-                                      'Sign In.',
-                                      style: TextStyle(
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const LoginScreen()),
+                              );
+                            },
+                            child: const Text.rich(
+                              TextSpan(
+                                text: 'Already have an account? ',
+                                style: TextStyle(
+                                    color: Colors.black87, fontSize: 14),
+                                children: [
+                                  TextSpan(
+                                    text: 'Sign In.',
+                                    style: TextStyle(
                                         color: Color(0xFF00A3D4),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                        fontWeight: FontWeight.bold),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
-
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -344,7 +353,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final last = now;
     final picked = await showDatePicker(
       context: context,
-      initialDate: _dobValue ?? DateTime(now.year - 18, now.month, now.day),
+      initialDate: _dobValue ?? DateTime(now.year - 18),
       firstDate: first,
       lastDate: last,
       helpText: 'Select date of birth',
@@ -361,18 +370,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _onSubmit() async {
     if (_formKey.currentState?.validate() ?? false) {
       try {
-        // Show loading indicator
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Creating account...')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Creating account...')));
 
-        // Create user with email and password
         final userCredential = await _auth.createUserWithEmailAndPassword(
           email: _email.text.trim(),
           password: _password.text,
         );
 
-        // Store additional user data in Firestore
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'name': _name.text.trim(),
           'email': _email.text.trim(),
@@ -382,34 +387,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        // Show success message and navigate to login
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created successfully!')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Account created successfully!')));
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const LoginScreen()),
           );
         }
       } catch (e) {
-        // Show error message
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
         }
       }
     }
   }
 
   Widget _label(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(
-      text,
-      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          text,
+          style:
+              const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      );
 
   Widget _roundedField({
     required TextEditingController controller,
@@ -417,6 +419,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     bool readOnly = false,
     bool obscure = false,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
     Widget? suffix,
   }) {
@@ -426,14 +429,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       obscureText: obscure,
       validator: validator,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 16,
-        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: const BorderSide(color: Colors.transparent),
