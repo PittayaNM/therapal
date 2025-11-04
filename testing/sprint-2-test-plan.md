@@ -82,7 +82,7 @@
 | Project Name | Therapal |  | Test Case Author | Boss |
 |---|---|---|---|---|
 | Priority | Low |  | Test Case Reviewer | Thun |
-| Description |  |  | Test Case Version | Name |
+| Description |  |  | Test Case Version | 3 |
 | Test Objective |  |  | Test Execution Date | 4/11/2025 |
 
 ---
