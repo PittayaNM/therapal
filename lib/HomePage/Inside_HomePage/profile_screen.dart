@@ -1,13 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:therapal/Login_Reg/login_screen.dart';
+import 'package:therapal/services/auth_service.dart';
+import 'edit_profile_screen.dart';
+import 'change_password_screen.dart';
 
-
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _authService = AuthService();
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await _authService.getCurrentUserData();
+      if (mounted) {
+        setState(() {
+          _userData = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_userData == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Error loading profile'),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -44,37 +94,40 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                       radius: 48,
-                      backgroundImage: AssetImage('assets/Pin.png'),
+                      backgroundImage: _userData?['profileImageUrl'] != null
+                          ? NetworkImage(_userData!['profileImageUrl'])
+                          : const AssetImage('assets/Pin.png') as ImageProvider,
                     ),
                   ),
                   const SizedBox(height: 10),
 
-                  // Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFC83A),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Golden',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF5B4500),
+                  // Badge (show only if user has subscription/membership)
+                  if (_userData?['membership'] != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFC83A),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _userData?['membership'] ?? 'Golden',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF5B4500),
+                        ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 12),
 
-                  const Text(
-                    'George Josure',
+                  Text(
+                    _userData?['name'] ?? 'User',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 24),
 
@@ -90,10 +143,18 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Edit tapped')),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EditProfileScreen(userData: _userData!),
+                            ),
                           );
+                          
+                          // Reload user data if changes were saved
+                          if (result == true) {
+                            _loadUserData();
+                          }
                         },
                         child: const Text('Edit'),
                       ),
@@ -104,22 +165,83 @@ class ProfileScreen extends StatelessWidget {
                   _infoRow(
                     icon: Icons.person_outline_rounded,
                     title: 'Name',
-                    value: 'George Josure',
+                    value: _userData?['name'] ?? 'N/A',
                   ),
                   _infoRow(
                     icon: Icons.email_outlined,
                     title: 'Email',
-                    value: 'grorge404@gmail.com',
+                    value: _userData?['email'] ?? 'N/A',
                   ),
                   _infoRow(
                     icon: Icons.phone_outlined,
                     title: 'Contact',
-                    value: '+66 987654321',
+                    value: _userData?['phone'] ?? 'N/A',
                   ),
                   _infoRow(
                     icon: Icons.cake_outlined,
                     title: 'Date of birth',
-                    value: 'Jun 24 1965',
+                    value: _userData?['dateOfBirth'] ?? 'N/A',
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Section: Security
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Security',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ChangePasswordScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0x11000000)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF2F6FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.lock_outline_rounded,
+                                color: Color(0xFF4F7DF3)),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Change Password',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              size: 18, color: Colors.black54),
+                        ],
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 24),
@@ -163,13 +285,14 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         elevation: 0,
                       ),
-                      onPressed: () {
-                        // TODO: ใส่ logic logout (ลบ token ฯลฯ) ก่อน navigate ถ้ามี
+                      onPressed: () async {
+                        await _authService.signOut();
+                        if (!mounted) return;
                         Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(
                             builder: (_) => const LoginScreen(),
                           ),
-                          (route) => false, // เคลียร์ทุกหน้าที่ค้างอยู่
+                          (route) => false,
                         );
                       },
                       child: const Text(

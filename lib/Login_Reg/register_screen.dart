@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -23,6 +26,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirm = TextEditingController();
   
   String _selectedRole = 'patient'; // Default role
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
   bool _obscure1 = true;
   bool _obscure2 = true;
@@ -106,6 +111,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Profile Image Picker
+                        Center(
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Stack(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(.08),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 60,
+                                    backgroundImage: _profileImage != null
+                                        ? FileImage(_profileImage!)
+                                        : const AssetImage('assets/Pin.png') as ImageProvider,
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF00B2E3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Center(
+                          child: Text(
+                            'Tap to upload profile photo',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
                         _label('Name'),
                         _roundedField(
                           controller: _name,
@@ -358,6 +421,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _profileImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
+    }
+  }
+
+  Future<String?> _uploadProfileImage(String userId) async {
+    if (_profileImage == null) return null;
+
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('profile_images')
+          .child('$userId.jpg');
+      
+      await ref.putFile(_profileImage!);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading image: $e')),
+        );
+      }
+      return null;
+    }
+  }
+
   Future<void> _onSubmit() async {
     if (_formKey.currentState?.validate() ?? false) {
       try {
@@ -372,6 +479,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           password: _password.text,
         );
 
+        // Upload profile image if selected
+        String? profileImageUrl;
+        if (_profileImage != null) {
+          profileImageUrl = await _uploadProfileImage(userCredential.user!.uid);
+        }
+
         // Store additional user data in Firestore
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'name': _name.text.trim(),
@@ -379,6 +492,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'phone': _phone.text.trim(),
           'dateOfBirth': _dobValue?.toIso8601String(),
           'role': _selectedRole,
+          'profileImageUrl': profileImageUrl,
           'createdAt': FieldValue.serverTimestamp(),
         });
 

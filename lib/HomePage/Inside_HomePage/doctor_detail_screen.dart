@@ -21,6 +21,7 @@ class DoctorDetailArgs {
   final String therapistUid;
   final String? email;
   final String? phone;
+  final String? profileImageUrl;
 
   const DoctorDetailArgs({
     required this.name,
@@ -38,6 +39,7 @@ class DoctorDetailArgs {
     required this.therapistUid,
     this.email,
     this.phone,
+    this.profileImageUrl,
   });
 }
 
@@ -137,6 +139,7 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
               doctorRating: widget.args.rating,
               doctorReviews: widget.args.reviews,
               doctorPhotoAsset: widget.args.photoAsset,
+              profileImageUrl: widget.args.profileImageUrl,
               dateText: _formatDate(_selectedDate!),
               timeRangeText: _formatTimeRange(start, end),
               typeText: _selectedType!,
@@ -284,13 +287,23 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
                       ],
                     ),
                     child: ClipOval(
-                      child: args.photoAsset != null
-                          ? Image.asset(args.photoAsset!, fit: BoxFit.cover)
-                          : const Icon(
-                              Icons.person,
-                              size: 80,
-                              color: Colors.black38,
-                            ),
+                      child: args.profileImageUrl != null
+                          ? Image.network(
+                              args.profileImageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.person,
+                                size: 80,
+                                color: Colors.black38,
+                              ),
+                            )
+                          : args.photoAsset != null
+                              ? Image.asset(args.photoAsset!, fit: BoxFit.cover)
+                              : const Icon(
+                                  Icons.person,
+                                  size: 80,
+                                  color: Colors.black38,
+                                ),
                     ),
                   ),
                 ),
@@ -527,6 +540,7 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
                                                             doctorRating: widget.args.rating,
                                                             doctorReviews: widget.args.reviews,
                                                             doctorPhotoAsset: widget.args.photoAsset,
+                                                            profileImageUrl: widget.args.profileImageUrl,
                                                             dateText: dateText,
                                                             timeRangeText: timeRange,
                                                             typeText: _selectedType!,
@@ -762,6 +776,7 @@ class ConfirmAppointmentArgs {
   final double doctorRating;
   final int doctorReviews;
   final String? doctorPhotoAsset;
+  final String? profileImageUrl;
 
   final String dateText; // e.g. "September 30, 2025"
   final String timeRangeText; // e.g. "11:00 AM - 1:00 PM"
@@ -783,6 +798,7 @@ class ConfirmAppointmentArgs {
     required this.doctorRating,
     required this.doctorReviews,
     required this.doctorPhotoAsset,
+    this.profileImageUrl,
     required this.dateText,
     required this.timeRangeText,
     required this.typeText,
@@ -852,10 +868,12 @@ class ConfirmAppointmentScreen extends StatelessWidget {
                       CircleAvatar(
                         radius: 28,
                         backgroundColor: Colors.white,
-                        backgroundImage: args.doctorPhotoAsset != null
-                            ? AssetImage(args.doctorPhotoAsset!)
-                            : null,
-                        child: args.doctorPhotoAsset == null
+                        backgroundImage: args.profileImageUrl != null
+                            ? NetworkImage(args.profileImageUrl!)
+                            : (args.doctorPhotoAsset != null
+                                ? AssetImage(args.doctorPhotoAsset!)
+                                : null) as ImageProvider?,
+                        child: args.profileImageUrl == null && args.doctorPhotoAsset == null
                             ? const Icon(
                                 Icons.person,
                                 size: 32,

@@ -51,6 +51,7 @@ class TherapyScreen extends StatelessWidget {
           specialties: specialtiesList,
           email: userData['email'] as String?,
           phone: userData['phone'] as String?,
+          profileImageUrl: userData['profileImageUrl'] as String?,
         ));
       }
       
@@ -186,6 +187,7 @@ class _Therapist {
   final List<dynamic>? availability;
   final String? email;
   final String? phone;
+  final String? profileImageUrl;
 
   const _Therapist({
     required this.name,
@@ -199,6 +201,7 @@ class _Therapist {
     this.availability,
     this.email,
     this.phone,
+    this.profileImageUrl,
   });
 }
 
@@ -230,6 +233,7 @@ class _TherapistCard extends StatelessWidget {
                     therapistUid: t.uid,
                 email: t.email,
                 phone: t.phone,
+                profileImageUrl: t.profileImageUrl,
               ),
             ),
           ),
@@ -261,7 +265,14 @@ class _TherapistCard extends StatelessWidget {
                 border: Border.all(color: Colors.white, width: 3),
               ),
               child: ClipOval(
-                child: const Icon(Icons.person, size: 28, color: Color(0xFF6B7AFF)),
+                child: t.profileImageUrl != null
+                    ? Image.network(
+                        t.profileImageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.person, size: 28, color: Color(0xFF6B7AFF)),
+                      )
+                    : const Icon(Icons.person, size: 28, color: Color(0xFF6B7AFF)),
               ),
             ),
             const SizedBox(width: 12),

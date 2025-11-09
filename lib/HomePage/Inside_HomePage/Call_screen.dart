@@ -6,8 +6,14 @@ import '../../utils/settings.dart';
 class CallScreen extends StatefulWidget {
   final String channelId;
   final String? token;
+  final bool isLocalTherapist;
 
-  const CallScreen({super.key, required this.channelId, this.token});
+  const CallScreen({
+    super.key,
+    required this.channelId,
+    this.token,
+    this.isLocalTherapist = false,
+  });
 
   @override
   State<CallScreen> createState() => _CallScreenState();
@@ -20,6 +26,7 @@ class _CallScreenState extends State<CallScreen> {
   bool _micEnabled = true;
   bool _camEnabled = true;
   String? _error;
+  int? _pinnedUid; // null = no pin; 0 = local; >0 = remote uid
 
   @override
   void initState() {
@@ -28,13 +35,8 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _init() async {
-    // 1) Ask permissions
     await [Permission.microphone, Permission.camera].request();
-
-    // 2) Init engine
     await _engine.initialize(RtcEngineContext(appId: appId));
-
-    // 3) Register event handlers
     _engine.registerEventHandler(RtcEngineEventHandler(
       onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
         setState(() {
@@ -42,19 +44,23 @@ class _CallScreenState extends State<CallScreen> {
           _error = null;
         });
       },
-      onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+      onUserJoined: (RtcConnection conn, int remoteUid, int elapsed) {
         setState(() => _remoteUids.add(remoteUid));
       },
-      onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-        setState(() => _remoteUids.remove(remoteUid));
+      onUserOffline: (RtcConnection conn, int remoteUid, UserOfflineReasonType reason) {
+        setState(() {
+          _remoteUids.remove(remoteUid);
+          if (_pinnedUid == remoteUid) _pinnedUid = null;
+        });
       },
-      onLeaveChannel: (RtcConnection connection, RtcStats stats) {
+      onLeaveChannel: (RtcConnection conn, RtcStats stats) {
         setState(() {
           _joined = false;
           _remoteUids.clear();
+          _pinnedUid = null;
         });
       },
-      onConnectionStateChanged: (RtcConnection connection, ConnectionStateType state, ConnectionChangedReasonType reason) {
+      onConnectionStateChanged: (RtcConnection conn, ConnectionStateType state, ConnectionChangedReasonType reason) {
         if (state == ConnectionStateType.connectionStateFailed) {
           setState(() => _error = 'Connection failed: reason=$reason');
         }
@@ -67,7 +73,6 @@ class _CallScreenState extends State<CallScreen> {
     await _engine.enableVideo();
     await _engine.startPreview();
 
-    // 4) Join channel
     final String effectiveToken = (widget.token != null && widget.token!.isNotEmpty)
         ? widget.token!
         : (token.isNotEmpty ? token : '');
@@ -109,44 +114,204 @@ class _CallScreenState extends State<CallScreen> {
     setState(() {});
   }
 
-  Widget _buildVideoViews() {
-    final tiles = <Widget>[];
-
-    // Local preview
-    tiles.add(Container(
-      color: Colors.black,
-      child: AgoraVideoView(
-        controller: VideoViewController(
-          rtcEngine: _engine,
-          canvas: const VideoCanvas(uid: 0),
-          useFlutterTexture: true,
-          useAndroidSurfaceView: true,
-        ),
-      ),
-    ));
-
-    // Remote users
-    for (final uid in _remoteUids) {
-      tiles.add(Container(
-        color: Colors.black,
-        child: AgoraVideoView(
-          controller: VideoViewController.remote(
-            rtcEngine: _engine,
-            canvas: VideoCanvas(uid: uid),
-            connection: RtcConnection(channelId: widget.channelId),
-            useFlutterTexture: true,
-            useAndroidSurfaceView: true,
-          ),
-        ),
-      ));
+  Widget _buildVideoTile(int uid, {bool rounded = false}) {
+    final isLocal = uid == 0;
+    // Determine which tile should show the therapist badge for ALL participants.
+    // - If this client is the therapist, mark the local tile (uid==0).
+    // - If this client is a patient and there is exactly one remote, mark that remote tile.
+    //   For multi-party calls, we can't reliably identify the therapist without name mapping,
+    //   so we skip the badge when multiple remotes are present.
+    bool isTherapist;
+    if (widget.isLocalTherapist) {
+      isTherapist = isLocal;
+    } else {
+      final therapistRemoteUid = _remoteUids.length == 1 ? _remoteUids.first : null;
+      isTherapist = (!isLocal && therapistRemoteUid != null && uid == therapistRemoteUid);
     }
 
-    if (tiles.length == 1) {
-      return tiles.first;
+    final view = Container(
+      color: Colors.black,
+      child: isLocal
+          ? AgoraVideoView(
+              controller: VideoViewController(
+                rtcEngine: _engine,
+                canvas: const VideoCanvas(uid: 0),
+                useFlutterTexture: true,
+                useAndroidSurfaceView: true,
+              ),
+            )
+          : AgoraVideoView(
+              controller: VideoViewController.remote(
+                rtcEngine: _engine,
+                canvas: VideoCanvas(uid: uid),
+                connection: RtcConnection(channelId: widget.channelId),
+                useFlutterTexture: true,
+                useAndroidSurfaceView: true,
+              ),
+            ),
+    );
+
+    final baseView = rounded
+        ? ClipRRect(borderRadius: BorderRadius.circular(12), child: view)
+        : view;
+
+    if (!isTherapist) return baseView;
+
+    return Stack(
+      children: [
+        Positioned.fill(child: baseView),
+        Positioned(
+          top: 8,
+          left: 8,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF27C07D).withOpacity(0.9),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.medical_services, size: 16, color: Colors.white),
+                SizedBox(width: 4),
+                Text(
+                  'Therapist',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<int> _allUids() => [0, ..._remoteUids];
+
+  Widget _buildGrid() {
+    final uids = _allUids();
+    if (uids.length == 1) {
+      final sole = uids.first;
+      return GestureDetector(
+        onTap: () => setState(() => _pinnedUid = sole),
+        child: _buildVideoTile(sole),
+      );
     }
     return GridView.count(
       crossAxisCount: 2,
-      children: tiles,
+      children: [
+        for (final uid in uids)
+          GestureDetector(
+            onTap: () => setState(() => _pinnedUid = uid),
+            child: Stack(
+              children: [
+                Positioned.fill(child: _buildVideoTile(uid)),
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: const Icon(Icons.push_pin, size: 18, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPinnedLayout() {
+    final pinned = _pinnedUid!;
+    final others = _allUids().where((u) => u != _pinnedUid).toList(growable: false);
+    return Column(
+      children: [
+        Expanded(
+          flex: 3,
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildVideoTile(pinned)),
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => setState(() => _pinnedUid = null),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white38, width: 1.5),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.push_pin_outlined, color: Colors.white, size: 20),
+                          SizedBox(width: 6),
+                          Text('Unpin', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (others.isNotEmpty)
+          Container(
+            height: 140,
+            color: Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (context, index) {
+                final uid = others[index];
+                return GestureDetector(
+                  onTap: () => setState(() => _pinnedUid = uid),
+                  child: Container(
+                    width: 110,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white38, width: 1.5),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(child: _buildVideoTile(uid, rounded: true)),
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: const Icon(Icons.push_pin_outlined, size: 16, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemCount: others.length,
+            ),
+          ),
+      ],
     );
   }
 
@@ -158,7 +323,7 @@ class _CallScreenState extends State<CallScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: _buildVideoViews(),
+              child: _pinnedUid == null ? _buildGrid() : _buildPinnedLayout(),
             ),
             if (!_joined)
               Positioned(
@@ -182,7 +347,6 @@ class _CallScreenState extends State<CallScreen> {
                   ),
                 ),
               ),
-            // Controls
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
@@ -229,7 +393,7 @@ class _CallScreenState extends State<CallScreen> {
                   ],
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

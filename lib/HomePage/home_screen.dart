@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../Login_Reg/login_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import 'Inside_HomePage/profile_screen.dart';
 import 'Inside_HomePage/theraphy_screen.dart';
@@ -8,7 +9,8 @@ import 'Inside_HomePage/appointment_screen.dart';
 import 'Inside_HomePage/help_screen.dart';
 import 'Inside_HomePage/therapist_edit_screen.dart';
 import 'Inside_HomePage/subscription_screen.dart';
-import 'package:therapal/HomePage/Inside_HomePage/Lives_screens.dart';
+import 'package:therapal/HomePage/Inside_HomePage/live_setup_screen.dart';
+import 'package:therapal/HomePage/Inside_HomePage/patient_live_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userRole;
@@ -25,7 +27,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _authService = AuthService();
   String? _userName;
-  bool _isLoading = false;
+  String? _profileImageUrl;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSub;
 
   @override
   void initState() {
@@ -34,39 +37,41 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadUserData() async {
+    // Initial fetch
     final userData = await _authService.getCurrentUserData();
     if (mounted) {
       setState(() {
         _userName = userData?['name'] as String?;
+        _profileImageUrl = userData?['profileImageUrl'] as String?;
+      });
+    }
+
+    // Live updates
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      _userSub?.cancel();
+      _userSub = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots()
+          .listen((doc) {
+        if (!mounted) return;
+        final data = doc.data();
+        setState(() {
+          _userName = data?['name'] as String? ?? _userName;
+          _profileImageUrl = data?['profileImageUrl'] as String? ?? _profileImageUrl;
+        });
       });
     }
   }
 
-  Future<void> _handleLogout() async {
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signOut();
-      if (!mounted) return;
-      
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error logging out: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+  @override
+  void dispose() {
+    _userSub?.cancel();
+    super.dispose();
   }
+
+  
 
   @override
   Widget build(BuildContext context) {
@@ -155,10 +160,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      child: const CircleAvatar(
+                      child: CircleAvatar(
                         radius: 86,
                         backgroundColor: Colors.white,
-                        backgroundImage: AssetImage('assets/Pin.png'),
+                        backgroundImage: _profileImageUrl != null
+                            ? NetworkImage(_profileImageUrl!)
+                            : const AssetImage('assets/Pin.png') as ImageProvider,
                       ),
                     ),
                   ),
@@ -184,12 +191,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.live_tv_rounded,
                         title: 'Lives',
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LivesScreen(),
-                            ),
-                          );
+                          // Navigate based on user role
+                          if (widget.userRole == 'therapist') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LiveSetupScreen(),
+                              ),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PatientLiveListScreen(),
+                              ),
+                            );
+                          }
                         },
                       ),
                       _MenuCard(
@@ -271,11 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _tap(String name) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('$name tapped')));
-  }
+  
 }
 
 // --- การ์ดเมนู ---

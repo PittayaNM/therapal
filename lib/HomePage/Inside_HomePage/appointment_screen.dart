@@ -823,11 +823,16 @@ class TherapistApptCard extends StatelessWidget {
             final channelId = (defaultChannelId.isNotEmpty)
               ? defaultChannelId
               : _buildChannelId(appointment);
+                      
                       if (context.mounted) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CallScreen(channelId: channelId, token: token),
+                            builder: (_) => CallScreen(
+                              channelId: channelId,
+                              token: token,
+                              isLocalTherapist: true,
+                            ),
                           ),
                         );
                       }
@@ -843,7 +848,7 @@ class TherapistApptCard extends StatelessWidget {
                   ),
                 if (calling == 'calling') ...[
                   ElevatedButton.icon(
-                    onPressed: () {
+                    onPressed: () async {
                       // Build a deterministic channel id for this session
                       String _buildChannelId(Map<String, dynamic> appt) {
                         final doctorUid = (appt['doctorUid'] ?? '').toString();
@@ -854,12 +859,19 @@ class TherapistApptCard extends StatelessWidget {
                       }
 
                       final channelId = _buildChannelId(appointment);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CallScreen(channelId: channelId, token: token),
-                        ),
-                      );
+                      
+                      if (context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CallScreen(
+                              channelId: channelId,
+                              token: token,
+                              isLocalTherapist: true,
+                            ),
+                          ),
+                        );
+                      }
                     },
                     icon: const Icon(Icons.video_call, size: 18),
                     label: const Text('Join Call'),
@@ -1298,7 +1310,7 @@ class PatientApptCard extends StatelessWidget {
                 ),
               ElevatedButton.icon(
                 onPressed: canJoin
-                    ? () {
+                    ? () async {
                         // Build a deterministic channel id for this session so all participants join the same room
                         String _buildChannelId(Map<String, dynamic> appt) {
                           final doctorUid = (appt['doctorUid'] ?? '').toString();
@@ -1310,12 +1322,19 @@ class PatientApptCard extends StatelessWidget {
             final channelId = (defaultChannelId.isNotEmpty)
               ? defaultChannelId
               : _buildChannelId(appointment);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CallScreen(channelId: channelId, token: token),
-                          ),
-                        );
+                        
+                        if (context.mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CallScreen(
+                                channelId: channelId,
+                                token: token,
+                                isLocalTherapist: false,
+                              ),
+                            ),
+                          );
+                        }
                       }
                     : null,
                 icon: const Icon(Icons.video_call, size: 18),
