@@ -58,5 +58,5 @@
 | Create retrospective report of sprint 1 in md file and push to github | Pittaya Namab |
 | Develop frontEnd | Jiratchaya Tiemjarat, Rawikorn Nuntawong |
 | Develop backend | Pittaya Namab |
-| Creating a test plan | Vitthawat Buaban, Napapat Jiraseweekul, Narudol Sompong, Korawich Soin, Nuttanon Kingkaewrungrote |
+| Creating a test plan | Vitthawat Buaban, Napapat Jiraseweekul, Narudol Sompong, Korawich Soin, Nuttanon Kingkaewrungrote,Trin Rattanasiri |
 
