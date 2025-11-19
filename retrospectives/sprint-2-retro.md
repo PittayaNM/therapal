@@ -41,6 +41,7 @@
 | Create retrospective report of sprint 2 in md file and push to github | Pittaya Namab |
 | Continue Develop frontEnd | Jiratchaya Tiemjarat, Rawikorn Nuntawong |
 | Continue Develop backend | Pittaya Namab |
-| Execute test plan | Vitthawat Buaban, Napapat Jiraseweekul, Narudol Sompong, Korawich Soin, Nuttanon Kingkaewrungrote |
+| Execute test plan | Vitthawat Buaban, Napapat Jiraseweekul, Narudol Sompong, Korawich Soin, Nuttanon Kingkaewrungrote, Trin Rattanasiri |
+
 
 
